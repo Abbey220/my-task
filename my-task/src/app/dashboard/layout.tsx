@@ -1,115 +1,118 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { ReactNode, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { mockData } from '@/app/lib/mockData';
-import { AuthService } from '@/app/lib/authservice';
 
-// Define the User type
-type User = {
-  id: string;
-  email: string;
-  role: string; // you can replace with specific roles if needed
-};
-
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
+  // Ensure code only runs in browser to avoid hydration errors
   useEffect(() => {
-    const currentUser = mockData.getCurrentUser() as User | null;
+    setMounted(true);
+    const currentUser = mockData.getCurrentUser();
     if (!currentUser) {
       router.push('/login');
     } else {
       setUser(currentUser);
-      setLoading(false);
     }
   }, [router]);
 
-  const handleLogout = async () => {
-    try {
-      await AuthService.logout();
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  if (loading) {
+  if (!mounted) return null; //  Don't render until mounted
+  if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!user) return null;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-lg border-b">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="text-xl font-bold text-blue-600">
-                DataShare
-              </Link>
-              
-              <div className="flex space-x-4">
-                <Link 
-                  href="/dashboard/user-a" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname === '/dashboard/user-a' 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  User A Dashboard
-                </Link>
-                <Link 
-                  href="/dashboard/user-b" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname === '/dashboard/user-b' 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-700 hover:text-blue-600'
-                  }`}
-                >
-                  User B Dashboard
-                </Link>
-              </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Responsive Navbar */}
+      <nav className="bg-white shadow-md">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div
+              className="flex-shrink-0 text-2xl font-bold text-blue-600 cursor-pointer"
+              onClick={() => router.push('/')}
+            >
+              DataShare
             </div>
 
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                Signed in as <span className="font-medium">{user.email}</span> 
-                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                  {user.role}
-                </span>
-              </span>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex space-x-6">
               <button
-                onClick={handleLogout}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="text-gray-700 hover:text-blue-600 text-base font-medium"
+                onClick={() => router.push('/dashboard/user-a')}
               >
-                Sign Out
+                User A
+              </button>
+              <button
+                className="text-gray-700 hover:text-green-600 text-base font-medium"
+                onClick={() => router.push('/dashboard/user-b')}
+              >
+                User B
+              </button>
+              <button
+                className="text-gray-700 hover:text-red-600 text-base font-medium"
+                onClick={() => {
+                  mockData.logout();
+                  router.push('/login');
+                }}
+              >
+                Logout
+              </button>
+            </div>
+
+            {/* Mobile Menu Button - Bigger & Bolder */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="text-gray-700 text-4xl font-extrabold focus:outline-none"
+              >
+                {menuOpen ? '✖️' : '☰'}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden px-4 pb-4 space-y-2 bg-white shadow-inner">
+            <button
+              className="block w-full text-left text-gray-700 hover:text-blue-600 text-lg font-semibold"
+              onClick={() => router.push('/dashboard/user-a')}
+            >
+              User A
+            </button>
+            <button
+              className="block w-full text-left text-gray-700 hover:text-green-600 text-lg font-semibold"
+              onClick={() => router.push('/dashboard/user-b')}
+            >
+              User B
+            </button>
+            <button
+              className="block w-full text-left text-gray-700 hover:text-red-600 text-lg font-semibold"
+              onClick={() => {
+                mockData.logout();
+                router.push('/login');
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
-      <main className="py-8">{children}</main>
+      <main className="flex-1 container mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 py-8">
+        {children}
+      </main>
     </div>
   );
 }

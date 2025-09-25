@@ -59,8 +59,8 @@ export default function DashboardHome() {
   return (
     <div className="max-w-6xl mx-auto px-4">
       {/* Welcome Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="max-w-2xl mx-auto text-center px-4">
+        <h1 className="ttext-3xl md:text-4xl lg:text-5xl font-bold">
           Welcome back, {user.email}!
         </h1>
         <p className="text-xl text-gray-600">
