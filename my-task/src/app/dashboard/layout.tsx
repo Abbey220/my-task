@@ -4,11 +4,11 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { mockData } from '@/app/lib/mockData';
 
-// ✅ Define the User type based on what you store in mockData
+// ✅ Define the User type based on what mockData provides
 type User = {
   id: string;
   email: string;
-  role?: string;
+  role: 'USER_A' | 'USER_B';
   createdAt?: Date;
 };
 
@@ -16,12 +16,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<User | null>(null); // ✅ No more `any`
+  const [user, setUser] = useState<User | null>(null);
 
   // ✅ Ensure code only runs in browser to avoid hydration errors
   useEffect(() => {
     setMounted(true);
-    const currentUser = mockData.getCurrentUser() as User | null; // ✅ Type-safe
+    const currentUser = mockData.getCurrentUser() as User | null;
     if (!currentUser) {
       router.push('/login');
     } else {
@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [router]);
 
-  if (!mounted) return null; //  Don't render until mounted
+  if (!mounted) return null; // Don't render until mounted
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* ✅ Responsive Navbar */}
+      {/* Navbar */}
       <nav className="bg-white shadow-md">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -77,7 +77,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
 
-            {/* ✅ Mobile Menu Button - Bigger & Bolder */}
+            {/* Mobile Menu Button */}
             <div className="md:hidden">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* ✅ Mobile Menu */}
+        {/* Mobile Menu */}
         {menuOpen && (
           <div className="md:hidden px-4 pb-4 space-y-2 bg-white shadow-inner">
             <button
@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         )}
       </nav>
 
-      {/* ✅ Main Content */}
+      {/* Main Content */}
       <main className="flex-1 container mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>

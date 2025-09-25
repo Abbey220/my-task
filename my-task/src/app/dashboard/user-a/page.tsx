@@ -50,11 +50,8 @@ export default function UserADashboard() {
   }, [formData.numberOfUsers, formData.numberOfProducts]);
 
   const loadData = (userId: string) => {
-    const company = mockData.getUserCompanyData(userId);
-    setCompanyData(company);
-
-    const files = mockData.getAllFiles();
-    setUploadedFiles(files);
+    setCompanyData(mockData.getUserCompanyData(userId));
+    setUploadedFiles(mockData.getAllFiles());
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,11 +71,7 @@ export default function UserADashboard() {
 
     setTimeout(() => {
       try {
-        mockData.saveCompanyData({
-          ...formData,
-          userId: user.id,
-        });
-
+        mockData.saveCompanyData({ ...formData, userId: user.id });
         setMessage('✅ Data submitted successfully!');
         setFormData({
           companyName: '',
@@ -86,7 +79,6 @@ export default function UserADashboard() {
           numberOfProducts: 0,
           percentage: 0,
         });
-
         loadData(user.id);
       } catch {
         setMessage('❌ Failed to submit data');
@@ -106,16 +98,14 @@ export default function UserADashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6 bg-gray-50 text-gray-800">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -158,8 +148,8 @@ export default function UserADashboard() {
       {activeTab === 'data' && (
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Form */}
-          <div className="card">
-            <h2 className="text-2xl font-semibold mb-6">Enter Company Data</h2>
+          <div className="card bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
+            <h2 className="text-2xl font-semibold mb-6 text-gray-900">Enter Company Data</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -243,8 +233,8 @@ export default function UserADashboard() {
           </div>
 
           {/* Recent Submissions */}
-          <div className="card">
-            <h2 className="text-2xl font-semibold mb-6">Recent Submissions</h2>
+          <div className="card bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
+            <h2 className="text-2xl font-semibold mb-6 text-gray-900">Recent Submissions</h2>
             {companyData.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <div className="text-4xl mb-2">📊</div>
@@ -255,12 +245,12 @@ export default function UserADashboard() {
                 {companyData.slice(0, 5).map(data => (
                   <div key={data.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold">{data.companyName}</h3>
+                      <h3 className="font-semibold text-gray-900">{data.companyName}</h3>
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
                         {data.percentage}%
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
                       <span>👥 {data.numberOfUsers} users</span>
                       <span>📦 {data.numberOfProducts} products</span>
                     </div>
@@ -277,8 +267,8 @@ export default function UserADashboard() {
 
       {/* Files Tab */}
       {activeTab === 'files' && (
-        <div className="card">
-          <h2 className="text-2xl font-semibold mb-6">Files Uploaded by User B</h2>
+        <div className="card bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-900">Files Uploaded by User B</h2>
           {uploadedFiles.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <div className="text-4xl mb-2">📁</div>
@@ -294,8 +284,8 @@ export default function UserADashboard() {
                   <div className="flex items-center space-x-4">
                     <div className="text-3xl">📄</div>
                     <div>
-                      <div className="font-semibold">{file.fileName}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="font-semibold text-gray-900">{file.fileName}</div>
+                      <div className="text-sm text-gray-700">
                         Size: {formatFileSize(file.fileSize)} • Uploaded by: {file.uploadedBy}
                       </div>
                       <div className="text-xs text-gray-400">
