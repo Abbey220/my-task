@@ -1,63 +1,70 @@
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut 
+  signOut,
+  User as FirebaseUser
 } from 'firebase/auth';
 import { auth } from './firebase';
 import { mockData } from './mockData';
+import { User } from '@/app/types';
+
+type Role = 'USER_A' | 'USER_B';
 
 export class AuthService {
-  static async signUp(email: string, password: string, role: 'USER_A' | 'USER_B') {
+  static async signUp(email: string, password: string, role: Role): Promise<User> {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Create user in our mock data
-      const userData = {
-        id: user.uid,
-        email: user.email!,
-        role: role,
+      const firebaseUser: FirebaseUser = userCredential.user;
+
+      if (!firebaseUser.email) throw new Error('User email is null');
+
+      const userData: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        role,
         createdAt: new Date(),
       };
-      
+
       mockData.setUser(userData);
       return userData;
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) throw new Error(error.message);
+      throw new Error('Failed to sign up');
     }
   }
 
-  static async signIn(email: string, password: string) {
+  static async signIn(email: string, password: string): Promise<User> {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // For demo purposes, we'll create a user if they don't exist in our mock data
-      // In a real app, you'd fetch this from Firestore
+      const firebaseUser: FirebaseUser = userCredential.user;
+
+      if (!firebaseUser.email) throw new Error('User email is null');
+
       let userData = mockData.getCurrentUser();
-      
       if (!userData) {
         userData = {
-          id: user.uid,
-          email: user.email!,
-          role: 'USER_A', // Default role
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          role: 'USER_A',
           createdAt: new Date(),
         };
         mockData.setUser(userData);
       }
-      
+
       return userData;
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) throw new Error(error.message);
+      throw new Error('Failed to sign in');
     }
   }
 
-  static async logout() {
+  static async logout(): Promise<void> {
     try {
       await signOut(auth);
       mockData.logout();
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) throw new Error(error.message);
+      throw new Error('Failed to log out');
     }
   }
 }

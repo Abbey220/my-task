@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { mockData } from '@/app/lib/mockData';
+import { CompanyData, UploadedFile, User } from '@/app/types';
 
 interface CompanyFormData {
   companyName: string;
@@ -12,28 +13,30 @@ interface CompanyFormData {
 }
 
 export default function UserADashboard() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<CompanyFormData>({
     companyName: '',
     numberOfUsers: 0,
     numberOfProducts: 0,
     percentage: 0,
   });
-  const [message, setMessage] = useState('');
+  const [companyData, setCompanyData] = useState<CompanyData[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [companyData, setCompanyData] = useState<any[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'data' | 'files'>('data');
-  const router = useRouter();
 
-  const user = mockData.getCurrentUser();
-
+  // Load user and data
   useEffect(() => {
-    if (!user || user.role !== 'USER_A') {
+    const currentUser = mockData.getCurrentUser();
+    if (!currentUser || currentUser.role !== 'USER_A') {
       router.push('/login');
       return;
     }
-    loadData();
-  }, [user, router]);
+    setUser(currentUser);
+    loadData(currentUser.id);
+  }, [router]);
 
   // Auto-calculate percentage
   useEffect(() => {
@@ -46,52 +49,12 @@ export default function UserADashboard() {
     }
   }, [formData.numberOfUsers, formData.numberOfProducts]);
 
-  const loadData = () => {
-  const currentUser = mockData.getCurrentUser();
-  if (!currentUser) {
-    console.warn("No user found. Please log in.");
-    return;
-  }
+  const loadData = (userId: string) => {
+    const company = mockData.getUserCompanyData(userId);
+    setCompanyData(company);
 
-  const data = mockData.getUserCompanyData(currentUser.id);
-  const files = mockData.getAllFiles();
-  setCompanyData(data);
-  setUploadedFiles(files);
-};
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    // Simulate API call
-    setTimeout(() => {
-  try {
-    if (!user) {
-      setMessage('❌ No user found. Please log in first.');
-      return;
-    }
-
-    mockData.saveCompanyData({
-      ...formData,
-      userId: user.id, // ✅ Now safe — TypeScript knows user is not null
-    });
-
-    setMessage('✅ Data submitted successfully!');
-    setFormData({
-      companyName: '',
-      numberOfUsers: 0,
-      numberOfProducts: 0,
-      percentage: 0,
-    });
-    loadData();
-  } catch (error) {
-    setMessage('❌ Failed to submit data');
-  } finally {
-    setLoading(false);
-  }
-}, 500);
-
+    const files = mockData.getAllFiles();
+    setUploadedFiles(files);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +65,37 @@ export default function UserADashboard() {
     }));
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setLoading(true);
+    setMessage('');
+
+    setTimeout(() => {
+      try {
+        mockData.saveCompanyData({
+          ...formData,
+          userId: user.id,
+        });
+
+        setMessage('✅ Data submitted successfully!');
+        setFormData({
+          companyName: '',
+          numberOfUsers: 0,
+          numberOfProducts: 0,
+          percentage: 0,
+        });
+
+        loadData(user.id);
+      } catch {
+        setMessage('❌ Failed to submit data');
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -110,11 +104,11 @@ export default function UserADashboard() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (!user || user.role !== 'USER_A') {
+  if (!user) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center">
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg">
-          ❌ Access denied. This page is for User A only.
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
         </div>
       </div>
     );
@@ -128,7 +122,7 @@ export default function UserADashboard() {
           <h1 className="text-3xl font-bold text-gray-900">User A - Data Entry Dashboard</h1>
           <p className="text-gray-600 mt-2">Manage company data and view uploaded files</p>
         </div>
-        <button 
+        <button
           onClick={() => router.push('/dashboard')}
           className="btn btn-secondary"
         >
@@ -136,13 +130,13 @@ export default function UserADashboard() {
         </button>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-8">
         <button
           onClick={() => setActiveTab('data')}
           className={`px-6 py-3 font-medium border-b-2 transition-colors ${
-            activeTab === 'data' 
-              ? 'border-blue-500 text-blue-600' 
+            activeTab === 'data'
+              ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -151,8 +145,8 @@ export default function UserADashboard() {
         <button
           onClick={() => setActiveTab('files')}
           className={`px-6 py-3 font-medium border-b-2 transition-colors ${
-            activeTab === 'files' 
-              ? 'border-blue-500 text-blue-600' 
+            activeTab === 'files'
+              ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -160,13 +154,12 @@ export default function UserADashboard() {
         </button>
       </div>
 
-      {/* Data Entry Tab */}
+      {/* Data Tab */}
       {activeTab === 'data' && (
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Data Entry Form */}
+          {/* Form */}
           <div className="card">
             <h2 className="text-2xl font-semibold mb-6">Enter Company Data</h2>
-            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -177,9 +170,9 @@ export default function UserADashboard() {
                   name="companyName"
                   required
                   className="input"
-                  placeholder="Enter company name"
                   value={formData.companyName}
                   onChange={handleChange}
+                  placeholder="Enter company name"
                 />
               </div>
 
@@ -192,7 +185,7 @@ export default function UserADashboard() {
                     type="number"
                     name="numberOfUsers"
                     required
-                    min="1"
+                    min={1}
                     className="input"
                     value={formData.numberOfUsers || ''}
                     onChange={handleChange}
@@ -206,7 +199,7 @@ export default function UserADashboard() {
                     type="number"
                     name="numberOfProducts"
                     required
-                    min="1"
+                    min={1}
                     className="input"
                     value={formData.numberOfProducts || ''}
                     onChange={handleChange}
@@ -239,9 +232,11 @@ export default function UserADashboard() {
             </form>
 
             {message && (
-              <div className={`mt-4 p-3 rounded-lg ${
-                message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-              }`}>
+              <div
+                className={`mt-4 p-3 rounded-lg ${
+                  message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}
+              >
                 {message}
               </div>
             )}
@@ -250,16 +245,14 @@ export default function UserADashboard() {
           {/* Recent Submissions */}
           <div className="card">
             <h2 className="text-2xl font-semibold mb-6">Recent Submissions</h2>
-            
             {companyData.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <div className="text-4xl mb-2">📊</div>
                 <p>No data submitted yet</p>
-                <p className="text-sm">Your submissions will appear here</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {companyData.slice(0, 5).map((data) => (
+                {companyData.slice(0, 5).map(data => (
                   <div key={data.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold">{data.companyName}</h3>
@@ -286,36 +279,31 @@ export default function UserADashboard() {
       {activeTab === 'files' && (
         <div className="card">
           <h2 className="text-2xl font-semibold mb-6">Files Uploaded by User B</h2>
-          
           {uploadedFiles.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <div className="text-4xl mb-2">📁</div>
               <p>No files uploaded yet</p>
-              <p className="text-sm">Files uploaded by User B will appear here</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {uploadedFiles.map((file) => (
-                <div key={file.id} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg bg-gray-50">
+              {uploadedFiles.map(file => (
+                <div
+                  key={file.id}
+                  className="flex justify-between items-center p-4 border border-gray-200 rounded-lg bg-gray-50"
+                >
                   <div className="flex items-center space-x-4">
                     <div className="text-3xl">📄</div>
                     <div>
                       <div className="font-semibold">{file.fileName}</div>
                       <div className="text-sm text-gray-600">
-                        Size: {formatFileSize(file.fileSize)} • 
-                        Uploaded by: {file.uploadedBy}
+                        Size: {formatFileSize(file.fileSize)} • Uploaded by: {file.uploadedBy}
                       </div>
                       <div className="text-xs text-gray-400">
                         {new Date(file.createdAt).toLocaleString()}
                       </div>
                     </div>
                   </div>
-                  
-                  <a 
-                    href={file.fileUrl} 
-                    download
-                    className="btn btn-primary"
-                  >
+                  <a href={file.fileUrl} download className="btn btn-primary">
                     Download
                   </a>
                 </div>

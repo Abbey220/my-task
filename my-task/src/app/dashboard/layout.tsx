@@ -6,18 +6,25 @@ import Link from 'next/link';
 import { mockData } from '@/app/lib/mockData';
 import { AuthService } from '@/app/lib/authservice';
 
-export default function DashboardLayout({
-  children,
-}: {
+// Define the User type
+type User = {
+  id: string;
+  email: string;
+  role: string; // you can replace with specific roles if needed
+};
+
+interface DashboardLayoutProps {
   children: React.ReactNode;
-}) {
-  const [user, setUser] = useState<any>(null);
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const currentUser = mockData.getCurrentUser();
+    const currentUser = mockData.getCurrentUser() as User | null;
     if (!currentUser) {
       router.push('/login');
     } else {
@@ -102,9 +109,7 @@ export default function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="py-8">
-        {children}
-      </main>
+      <main className="py-8">{children}</main>
     </div>
   );
 }

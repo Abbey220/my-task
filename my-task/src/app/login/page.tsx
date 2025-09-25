@@ -25,17 +25,19 @@ export default function LoginPage() {
     }
 
     try {
-      let user;
-      
       if (isSignUp) {
-        user = await AuthService.signUp(email, password, role);
+        await AuthService.signUp(email, password, role);
       } else {
-        user = await AuthService.signIn(email, password);
+        await AuthService.signIn(email, password);
       }
 
       router.push('/dashboard');
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -94,7 +96,9 @@ export default function LoginPage() {
               <select
                 className="input"
                 value={role}
-                onChange={(e) => setRole(e.target.value as 'USER_A' | 'USER_B')}
+                onChange={(e) =>
+                  setRole(e.target.value as 'USER_A' | 'USER_B')
+                }
               >
                 <option value="USER_A">User A (Enter Data)</option>
                 <option value="USER_B">User B (Upload Files & View Data)</option>
@@ -107,7 +111,7 @@ export default function LoginPage() {
             disabled={loading}
             className="btn btn-primary w-full"
           >
-            {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+            {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
         </form>
 
@@ -117,7 +121,9 @@ export default function LoginPage() {
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-blue-600 hover:text-blue-800 text-sm"
           >
-            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            {isSignUp
+              ? 'Already have an account? Sign in'
+              : "Don't have an account? Sign up"}
           </button>
         </div>
       </div>
